@@ -1,1 +1,1 @@
-# sedona
+# Sedona — book hostels and apartments in Sedona online
