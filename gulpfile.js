@@ -1,18 +1,19 @@
 const browser = require("browser-sync").create();
 
 const gulp = require("gulp");
-const plumber = require("gulp-plumber");
 
 const rename = require("gulp-rename");
 const clean = require("gulp-clean");
 
-const posthtml = require("gulp-posthtml");
-const include = require("posthtml-include");
-const svgstore = require("gulp-svgstore");
 const imagemin = require("gulp-imagemin");
+const svgstore = require("gulp-svgstore");
 const webp = require("gulp-webp");
 
+const posthtml = require("gulp-posthtml");
+const include = require("posthtml-include");
+
 const sass = require("gulp-sass");
+const plumber = require("gulp-plumber");
 const autoprefixer = require("gulp-autoprefixer");
 const csso = require("gulp-csso");
 const sourcemaps = require("gulp-sourcemaps");
@@ -29,11 +30,7 @@ const fonts = () => {
     .pipe(gulp.dest("./build/fonts"));
 }
 
-const html = () => {
-  return gulp.src("./source/*.html")
-    .pipe(posthtml([include()]))
-    .pipe(gulp.dest("./build"));
-}
+// --
 
 const compressimages = () => {
   return gulp.src("./source/images/**/*", {base: "./source/images"})
@@ -64,6 +61,14 @@ const copyimages = () => {
     .pipe(gulp.dest("./build/images"))
 }
 
+// --
+
+const html = () => {
+  return gulp.src("./source/*.html")
+    .pipe(posthtml([include()]))
+    .pipe(gulp.dest("./build"));
+}
+
 const scss = () => {
   return gulp.src("./source/scss/main.scss")
     .pipe(plumber())
@@ -80,6 +85,8 @@ const scss = () => {
     .pipe(browser.stream());
 }
 
+// --
+
 const sync = (done) => {
   browser.init({
     server: {
@@ -95,6 +102,8 @@ const sync = (done) => {
 
   done();
 }
+
+// --
 
 const images = gulp.series(compressimages, convertwebp, sprite, copyimages);
 exports.images = images;
