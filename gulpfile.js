@@ -1,33 +1,49 @@
 const browser = require("browser-sync").create();
 
 const gulp = require("gulp");
-const plumber = require("gulp-plumber");
 
 const rename = require("gulp-rename");
-const del = require("del");
+const clean = require("gulp-clean");
+
+const imagemin = require("gulp-imagemin");
+const svgstore = require("gulp-svgstore");
+const webp = require("gulp-webp");
 
 const posthtml = require("gulp-posthtml");
 const include = require("posthtml-include");
-const svgstore = require("gulp-svgstore");
 
 const sass = require("gulp-sass");
+const plumber = require("gulp-plumber");
 const autoprefixer = require("gulp-autoprefixer");
 const csso = require("gulp-csso");
 const sourcemaps = require("gulp-sourcemaps");
 
 // --
 
+const cleanup = () => {
+  return gulp.src("./build/**/*", {read: false})
+    .pipe(clean());
+}
+
 const fonts = () => {
-  return gulp.src("./source/fonts/**/*.{woff, woff2}", {base: "./source/fonts"})
+  return gulp.src("./source/fonts/**/*.{woff,woff2}", {base: "./source/fonts"})
     .pipe(gulp.dest("./build/fonts"));
 }
 
-const images = () => {
-  return gulp.src([
-    "!./source/images/icons/",
-    "./source/images/**/*.{jpeg, jpg, png, gif, svg}"
-    ], {base: "./source/images"})
-    .pipe(gulp.dest("./build/images"));
+// --
+
+const compressimages = () => {
+  return gulp.src("./source/images/**/*", {base: "./source/images"})
+    .pipe(imagemin())
+    .pipe(gulp.dest("./source/images"))
+    .pipe(webp())
+    .pipe(gulp.dest("./source/images"));
+}
+
+const convertwebp = () => {
+  return gulp.src("./source/images/**/*", {base: "./source/images"})
+    .pipe(webp())
+    .pipe(gulp.dest("./source/images-compressed"));  
 }
 
 const sprite = () => {
@@ -36,6 +52,16 @@ const sprite = () => {
     .pipe(rename("sprite.svg"))
     .pipe(gulp.dest("./source/images"));
 }
+
+const copyimages = () => {
+  return gulp.src([
+    "./source/images/**/*",
+    "!./source/images/icons/**/*",
+    ], {base: "./source/images"})
+    .pipe(gulp.dest("./build/images"))
+}
+
+// --
 
 const html = () => {
   return gulp.src("./source/*.html")
@@ -59,6 +85,8 @@ const scss = () => {
     .pipe(browser.stream());
 }
 
+// --
+
 const sync = (done) => {
   browser.init({
     server: {
@@ -75,7 +103,12 @@ const sync = (done) => {
   done();
 }
 
-exports.default = gulp.series(
-  gulp.parallel(fonts, images),
-  sprite, html, scss, sync
-);
+// --
+
+const images = gulp.series(compressimages, convertwebp, sprite, copyimages);
+exports.images = images;
+
+const build = gulp.series(cleanup, gulp.parallel(fonts, images), html, scss);
+exports.build = build;
+
+exports.default = gulp.series(build, sync);
